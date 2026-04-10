@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Japan Family Trip 2026</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: #f5f3f0; color: #2c2c2c; line-height: 1.5;
+        }
+        header {
+            background: #fff; border-bottom: 1px solid #e0ddd8;
+            padding: 24px 32px; position: sticky; top: 0; z-index: 1000;
+        }
+        header h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.3px; }
+        header p { color: #7a756d; font-size: 14px; margin-top: 4px; }
+
+        .tab-bar {
+            display: flex; gap: 0; padding: 0 32px;
+            background: #fff; border-bottom: 1px solid #e0ddd8;
+        }
+        .tab {
+            padding: 12px 20px; font-size: 14px; font-weight: 500;
+            cursor: pointer; border-bottom: 2px solid transparent;
+            color: #7a756d; transition: all 0.2s; user-select: none;
+        }
+        .tab:hover { color: #2c2c2c; }
+        .tab.active { color: #2c2c2c; border-bottom-color: #c45a3c; }
+        .tab .tag {
+            display: inline-block; font-size: 10px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            padding: 2px 6px; border-radius: 3px; margin-left: 8px; vertical-align: middle;
+        }
+        .tag-train { background: #e8f0e8; color: #3a6b3a; }
+        .tag-beach { background: #fef3e0; color: #9a6a2a; }
+        .tag-tips { background: #f0e8f0; color: #6a3a6a; }
+
+        .content { max-width: 1200px; margin: 0 auto; padding: 24px 32px; }
+        .option-panel { display: none; }
+        .option-panel.active { display: block; }
+
+        .overview-grid {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 24px; margin-bottom: 24px;
+        }
+        .map-container {
+            background: #fff; border-radius: 12px;
+            overflow: hidden; border: 1px solid #e0ddd8; height: 420px;
+        }
+        .map-container .map { height: 100%; width: 100%; }
+
+        .summary-card {
+            background: #fff; border-radius: 12px;
+            border: 1px solid #e0ddd8; padding: 24px;
+            display: flex; flex-direction: column;
+        }
+        .summary-card h2 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+        .summary-card .subtitle { font-size: 13px; color: #7a756d; margin-bottom: 16px; }
+        .summary-card .vibe {
+            font-size: 14px; color: #5a5650; margin-bottom: 16px;
+            padding: 12px; background: #faf9f7; border-radius: 8px;
+            border-left: 3px solid #c45a3c;
+        }
+        .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .meta-item { font-size: 13px; }
+        .meta-item .label { color: #7a756d; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+        .meta-item .value { font-weight: 500; }
+
+        .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: auto; }
+        .pros-cons h4 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; color: #7a756d; }
+        .pros-cons ul { list-style: none; font-size: 13px; }
+        .pros-cons li { padding: 2px 0; padding-left: 16px; position: relative; }
+        .pros li::before { content: "+"; position: absolute; left: 0; color: #4a8a4a; font-weight: 600; }
+        .cons li::before { content: "-"; position: absolute; left: 2px; color: #b05a3a; font-weight: 600; }
+
+        .stops-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px; margin-bottom: 24px;
+        }
+        .stop-card {
+            background: #fff; border-radius: 12px; border: 1px solid #e0ddd8;
+            padding: 20px; cursor: pointer; transition: all 0.2s; position: relative;
+        }
+        .stop-card:hover { border-color: #c45a3c; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .stop-card.active-stop { border-color: #c45a3c; box-shadow: 0 0 0 1px #c45a3c; }
+        .stop-num {
+            position: absolute; top: 16px; right: 16px;
+            width: 24px; height: 24px; border-radius: 50%;
+            background: #c45a3c; color: #fff; font-size: 12px; font-weight: 600;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .stop-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 2px; }
+        .stop-card .nights { font-size: 13px; color: #c45a3c; font-weight: 500; margin-bottom: 10px; }
+        .stop-card .transport {
+            font-size: 12px; color: #7a756d; background: #faf9f7;
+            padding: 4px 8px; border-radius: 4px; display: inline-block; margin-bottom: 10px;
+        }
+        .stop-card .description { font-size: 13px; color: #5a5650; margin-bottom: 12px; }
+        .highlights { display: flex; flex-wrap: wrap; gap: 4px; }
+        .highlight-tag { font-size: 11px; padding: 3px 8px; border-radius: 4px; background: #f0eeeb; color: #5a5650; }
+        .highlight-tag.coffee { background: #f0e8e0; color: #7a5a3a; }
+        .highlight-tag.kids { background: #e8f0e8; color: #3a6b3a; }
+        .highlight-tag.food { background: #fef3e0; color: #9a6a2a; }
+        .highlight-tag.nature { background: #e0ecf4; color: #2a5a8a; }
+        .highlight-tag.beach { background: #e0f0f0; color: #2a7a7a; }
+        .highlight-tag.culture { background: #f0e8f0; color: #6a3a6a; }
+        .highlight-tag.tip { background: #fff3f0; color: #c45a3c; }
+
+        /* Day trips */
+        .daytrips { margin-bottom: 24px; }
+        .daytrips h3 { font-size: 15px; font-weight: 600; margin-bottom: 12px; color: #5a5650; }
+        .daytrip-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;
+        }
+        .daytrip-card {
+            background: #fff; border-radius: 10px; border: 1px dashed #d8d4ce;
+            padding: 14px 16px; font-size: 13px;
+        }
+        .daytrip-card strong { display: block; margin-bottom: 2px; }
+        .daytrip-card .from-badge {
+            font-size: 11px; color: #7a756d; background: #faf9f7;
+            padding: 2px 6px; border-radius: 3px; display: inline-block; margin-bottom: 6px;
+        }
+        .daytrip-card .desc { color: #5a5650; }
+
+        /* Cost section */
+        .cost-section {
+            background: #fff; border-radius: 12px; border: 1px solid #e0ddd8;
+            padding: 24px; margin-bottom: 24px;
+        }
+        .cost-section h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+        .cost-table { width: 100%; border-collapse: collapse; }
+        .cost-table th, .cost-table td {
+            padding: 8px 12px; text-align: left; font-size: 13px;
+            border-bottom: 1px solid #f0eeeb;
+        }
+        .cost-table th {
+            background: #faf9f7; font-weight: 600; font-size: 11px;
+            text-transform: uppercase; letter-spacing: 0.5px; color: #7a756d;
+        }
+        .cost-table .note { font-size: 11px; color: #9a9590; }
+        .cost-table tr.total td {
+            font-weight: 600; font-size: 14px;
+            border-top: 2px solid #e0ddd8; background: #faf9f7;
+        }
+        .cost-badge {
+            display: inline-block; padding: 2px 8px; border-radius: 4px;
+            font-size: 11px; font-weight: 600; margin-left: 8px;
+        }
+        .cost-badge.budget { background: #e8f0e8; color: #3a6b3a; }
+        .cost-badge.mid { background: #fef3e0; color: #9a6a2a; }
+
+        /* Compare */
+        .compare-table {
+            width: 100%; background: #fff; border-radius: 12px;
+            border: 1px solid #e0ddd8; overflow: hidden; border-collapse: collapse;
+        }
+        .compare-table th, .compare-table td {
+            padding: 12px 16px; text-align: left; font-size: 13px;
+            border-bottom: 1px solid #f0eeeb;
+        }
+        .compare-table th {
+            background: #faf9f7; font-weight: 600; font-size: 12px;
+            text-transform: uppercase; letter-spacing: 0.5px; color: #7a756d;
+        }
+        .compare-table td:first-child { font-weight: 500; }
+        .compare-table tr:last-child td { border-bottom: none; }
+        .compare-table tr.cost-row td { background: #fffdf8; }
+
+        /* Tips section */
+        .tips-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 16px; margin-bottom: 24px;
+        }
+        .tip-card {
+            background: #fff; border-radius: 12px; border: 1px solid #e0ddd8; padding: 20px;
+        }
+        .tip-card h4 {
+            font-size: 14px; font-weight: 600; margin-bottom: 8px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .tip-card .tip-icon {
+            width: 28px; height: 28px; border-radius: 6px; display: flex;
+            align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;
+        }
+        .tip-card ul { list-style: none; font-size: 13px; color: #5a5650; }
+        .tip-card li { padding: 4px 0; padding-left: 14px; position: relative; }
+        .tip-card li::before { content: "·"; position: absolute; left: 2px; font-weight: 900; color: #c45a3c; }
+        .tip-card .tip-highlight {
+            background: #fef8f0; border-radius: 6px; padding: 8px 12px;
+            margin-top: 8px; font-size: 12px; color: #7a6a4a;
+            border-left: 3px solid #e8c080;
+        }
+
+        .places-visited {
+            margin-top: 32px; padding: 16px 20px;
+            background: #fff; border-radius: 12px; border: 1px solid #e0ddd8;
+        }
+        .places-visited h4 {
+            font-size: 12px; text-transform: uppercase;
+            letter-spacing: 0.5px; color: #7a756d; margin-bottom: 8px;
+        }
+        .places-visited .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+        .places-visited .tag-visited {
+            font-size: 12px; padding: 4px 10px; background: #f0eeeb;
+            border-radius: 4px; color: #7a756d;
+            text-decoration: line-through; text-decoration-color: #c0bbb3;
+        }
+
+        .weather-note {
+            background: #fffdf8; border: 1px solid #f0e8d8; border-radius: 8px;
+            padding: 12px 16px; margin-bottom: 24px; font-size: 13px; color: #7a6a4a;
+        }
+        .weather-note strong { color: #5a4a2a; }
+
+        @media (max-width: 768px) {
+            .overview-grid { grid-template-columns: 1fr; }
+            .content { padding: 16px; }
+            .tab { padding: 10px 14px; font-size: 13px; }
+            .tips-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Japan Family Trip — Late Sep / Early Oct 2026</h1>
+        <p>14+ days / Family of 4 (kids 5 & 2) / Prague → Tokyo / Local living, parks, coffee, walking</p>
+    </header>
+
+    <div class="tab-bar">
+        <div class="tab active" data-option="1">Option A: Inland Sea <span class="tag tag-train">All Train</span></div>
+        <div class="tab" data-option="3">Option B: Okinawa <span class="tag tag-beach">Beach</span></div>
+        <div class="tab" data-option="compare">Compare</div>
+        <div class="tab" data-option="tips">Travel Tips <span class="tag tag-tips">Practical</span></div>
+    </div>
+
+    <div class="content">
+
+        <!-- OPTION A: INLAND SEA -->
+        <div class="option-panel active" id="option-1">
+            <div class="weather-note">
+                <strong>Late Sep / Early Oct:</strong> Tokyo 20-27°C, Osaka 20-28°C, Onomichi 20-26°C. Warm, pleasant walking weather. Slight typhoon risk (low). Early autumn vibes.
+            </div>
+            <div class="overview-grid">
+                <div class="map-container"><div id="map1" class="map"></div></div>
+                <div class="summary-card">
+                    <h2>Tokyo → Osaka → Onomichi</h2>
+                    <div class="subtitle">Familiar anchors + Inland Sea discovery</div>
+                    <div class="vibe">Two cities you know, re-experienced through kids' eyes, plus a charming small harbor town on the Inland Sea that barely any tourists visit. All connected by train. Ship luggage ahead with takkyubin — travel light with kids.</div>
+                    <div class="meta-grid">
+                        <div class="meta-item"><div class="label">Total nights</div><div class="value">14</div></div>
+                        <div class="meta-item"><div class="label">Bases</div><div class="value">3</div></div>
+                        <div class="meta-item"><div class="label">Flights</div><div class="value">0 domestic</div></div>
+                        <div class="meta-item"><div class="label">Swimming</div><div class="value">Borderline (24°C)</div></div>
+                    </div>
+                    <div class="pros-cons">
+                        <div class="pros">
+                            <h4>Pros</h4>
+                            <ul>
+                                <li>Simplest logistics — all JR trains</li>
+                                <li>Onomichi is a hidden gem</li>
+                                <li>Miyajima + Tomonoura day trips</li>
+                                <li>Best food variety (3 distinct scenes)</li>
+                                <li>Cheapest option</li>
+                            </ul>
+                        </div>
+                        <div class="cons">
+                            <h4>Cons</h4>
+                            <ul>
+                                <li>No real beach swimming</li>
+                                <li>2 of 3 bases are revisits</li>
+                                <li>Tail-end typhoon risk (low)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stops-grid">
+                <div class="stop-card" data-lat="35.6762" data-lng="139.6503" data-map="map1">
+                    <div class="stop-num">1</div>
+                    <h3>Tokyo</h3>
+                    <div class="nights">5 nights</div>
+                    <div class="transport">Fly into Haneda (closer to city than Narita)</div>
+                    <div class="description">Deep neighborhood stays — Shimokitazawa, Yanaka, Koenji. Yoyogi Park, Inokashira Park with pedal boats. TeamLab for the 5yo. Fukagawa Edo Museum (hidden gem — indoor reconstructed village). Daily playground time.</div>
+                    <div class="highlights">
+                        <span class="highlight-tag coffee">Specialty coffee hub</span>
+                        <span class="highlight-tag kids">TeamLab Borderless</span>
+                        <span class="highlight-tag kids">Inokashira Park</span>
+                        <span class="highlight-tag food">Conveyor belt sushi</span>
+                        <span class="highlight-tag kids">Fukagawa Edo Museum</span>
+                        <span class="highlight-tag tip">Fly into Haneda</span>
+                    </div>
+                </div>
+                <div class="stop-card" data-lat="34.6937" data-lng="135.5023" data-map="map1">
+                    <div class="stop-num">2</div>
+                    <h3>Osaka</h3>
+                    <div class="nights">4-5 nights</div>
+                    <div class="transport">Shinkansen — 2h 30min (ship luggage ahead via takkyubin)</div>
+                    <div class="description">Japan's best street food city. Nara day trip (deer park!). NIFREL aquarium at Expo Park. Utsubo Park playground. Nakazakicho cafe-hopping in converted old houses. Interactive dining: okonomiyaki you cook yourself, all-you-can-eat shabu shabu.</div>
+                    <div class="highlights">
+                        <span class="highlight-tag food">Street food capital</span>
+                        <span class="highlight-tag kids">Nara deer park</span>
+                        <span class="highlight-tag kids">NIFREL aquarium</span>
+                        <span class="highlight-tag coffee">Takamura, LiLo, Mel</span>
+                        <span class="highlight-tag food">Shabu shabu / okonomiyaki</span>
+                        <span class="highlight-tag tip">Mimaru apartments</span>
+                    </div>
+                </div>
+                <div class="stop-card" data-lat="34.4089" data-lng="133.2050" data-map="map1">
+                    <div class="stop-num">3</div>
+                    <h3>Onomichi</h3>
+                    <div class="nights">4-5 nights</div>
+                    <div class="transport">Shinkansen → Fukuyama (1h 20min) + local JR (20min)</div>
+                    <div class="description">Tiny Inland Sea harbor town. Flat waterfront shotengai for stroller walks, harbor cats, legendary Onomichi ramen. Slow pace, local life. Day trips to Tomonoura (Ponyo's fishing village) and Miyajima (floating torii + deer).</div>
+                    <div class="highlights">
+                        <span class="highlight-tag nature">Inland Sea views</span>
+                        <span class="highlight-tag food">Onomichi ramen</span>
+                        <span class="highlight-tag culture">Tomonoura (Ponyo village)</span>
+                        <span class="highlight-tag culture">Miyajima day trip</span>
+                        <span class="highlight-tag nature">Harbor cats</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="daytrips">
+                <h3>Day Trips</h3>
+                <div class="daytrip-grid">
+                    <div class="daytrip-card">
+                        <strong>Nara</strong>
+                        <span class="from-badge">From Osaka · 45min train</span>
+                        <div class="desc">Deer park (hundreds of friendly deer), Todai-ji temple (giant Buddha). Peak toddler content. Free-roaming deer eat from your hand. Flat, stroller-friendly.</div>
+                    </div>
+                    <div class="daytrip-card">
+                        <strong>Mt Fuji / Kawaguchiko</strong>
+                        <span class="from-badge">From Tokyo · 2h bus</span>
+                        <div class="desc">Don't "go to Fuji" — pick a beautiful viewing spot. Lake Kawaguchiko has playgrounds, boat rides, and (weather permitting) stunning Fuji backdrop. 66% chance of clouds though.</div>
+                    </div>
+                    <div class="daytrip-card">
+                        <strong>Miyajima Island</strong>
+                        <span class="from-badge">From Onomichi · 1.5h train+ferry</span>
+                        <div class="desc">Floating torii gate, friendly deer, flat waterfront walk. Very stroller-doable along main route. One of the trip highlights for any age.</div>
+                    </div>
+                    <div class="daytrip-card">
+                        <strong>Tomonoura</strong>
+                        <span class="from-badge">From Onomichi · 40min train+bus</span>
+                        <div class="desc">Tiny fishing port, inspiration for Ponyo. Extremely photogenic, quiet. Flat harbor area, cats, small beaches. Very few services — bring snacks.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cost-section">
+                <h3>Cost Estimate <span class="cost-badge budget">Budget</span> <span class="cost-badge mid">Mid-range</span></h3>
+                <table class="cost-table">
+                    <thead><tr><th>Category</th><th>Budget</th><th>Mid-range</th><th>Notes</th></tr></thead>
+                    <tbody>
+                        <tr><td>Flights PRG → HND return (4 pax)</td><td>60 000 Kc</td><td>90 000 Kc</td><td class="note">1 stop via Istanbul/Dubai/Helsinki. Return from Hiroshima airport or open-jaw +5-10k. Fly into Haneda!</td></tr>
+                        <tr><td>JR Pass — 7 day x 2 adults</td><td>23 000 Kc</td><td>23 000 Kc</td><td class="note">Kids under 6 = free. Covers Tokyo→Osaka→Fukuyama + local JR.</td></tr>
+                        <tr><td>Local transport + takkyubin</td><td>5 000 Kc</td><td>6 000 Kc</td><td class="note">IC cards, buses. Takkyubin ~350 Kc/bag per leg — ship luggage ahead.</td></tr>
+                        <tr><td>Accommodation (14 nights)</td><td>70 000 Kc</td><td>110 000 Kc</td><td class="note">Budget: Airbnb/Mimaru ~5k/night. Mid: nicer apartments + 1-2 nights ryokan with private family bath.</td></tr>
+                        <tr><td>Food (14 days, family of 4)</td><td>35 000 Kc</td><td>52 000 Kc</td><td class="note">~2 500/day budget (grocery picnics + cheap eats). ~3 700/day mid (mix + restaurants). Reserve dinners in advance!</td></tr>
+                        <tr><td>Activities & entry fees</td><td>5 000 Kc</td><td>8 000 Kc</td><td class="note">TeamLab, NIFREL, Miyajima ferry, temples. Most parks/playgrounds free.</td></tr>
+                        <tr><td>Coffee</td><td>4 000 Kc</td><td>7 000 Kc</td><td class="note">~300-500 Kc/day for specialty coffee</td></tr>
+                        <tr><td>Insurance + misc</td><td>8 000 Kc</td><td>13 000 Kc</td><td class="note">Travel insurance, eSIM (~500 Kc), souvenirs, konbini snack addiction</td></tr>
+                        <tr class="total"><td>TOTAL</td><td>~210 000 Kc</td><td>~309 000 Kc</td><td class="note">~8 400 EUR / ~12 400 EUR</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- OPTION B: OKINAWA -->
+        <div class="option-panel" id="option-3">
+            <div class="weather-note">
+                <strong>Late Sep / Early Oct:</strong> Tokyo 20-27°C, Osaka 20-28°C, Okinawa 26-30°C with 27°C water. Perfect beach weather! Slight typhoon risk for Okinawa — check forecasts, have flexible booking.
+            </div>
+            <div class="overview-grid">
+                <div class="map-container"><div id="map3" class="map"></div></div>
+                <div class="summary-card">
+                    <h2>Tokyo → Osaka → Okinawa</h2>
+                    <div class="subtitle">City magic + beach wind-down</div>
+                    <div class="vibe">Two familiar cities experienced fresh through kids' eyes, then fly south to a completely different Japan. Subtropical beaches, unique Okinawan culture and food, warm swimming guaranteed. End the trip relaxed on the beach.</div>
+                    <div class="meta-grid">
+                        <div class="meta-item"><div class="label">Total nights</div><div class="value">14-15</div></div>
+                        <div class="meta-item"><div class="label">Bases</div><div class="value">3</div></div>
+                        <div class="meta-item"><div class="label">Flights</div><div class="value">1-2 domestic</div></div>
+                        <div class="meta-item"><div class="label">Swimming</div><div class="value">Yes! 27°C water</div></div>
+                    </div>
+                    <div class="pros-cons">
+                        <div class="pros">
+                            <h4>Pros</h4>
+                            <ul>
+                                <li>Guaranteed warm beaches</li>
+                                <li>Okinawa is a totally new Japan</li>
+                                <li>Beach wind-down ending</li>
+                                <li>Best weather of both options</li>
+                                <li>Great for kids of all ages</li>
+                            </ul>
+                        </div>
+                        <div class="cons">
+                            <h4>Cons</h4>
+                            <ul>
+                                <li>Need rental car in Okinawa</li>
+                                <li>2 of 3 bases are revisits</li>
+                                <li>Most expensive option (+15k Kc)</li>
+                                <li>Higher typhoon risk (Okinawa)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stops-grid">
+                <div class="stop-card" data-lat="35.6762" data-lng="139.6503" data-map="map3">
+                    <div class="stop-num">1</div>
+                    <h3>Tokyo</h3>
+                    <div class="nights">4-5 nights</div>
+                    <div class="transport">Fly into Haneda (closer to city than Narita)</div>
+                    <div class="description">Familiar anchor, jet lag recovery. Neighborhood deep-dives — Shimokitazawa, Yanaka, Koenji. TeamLab for the 5yo. Inokashira Park, Yoyogi Park. Coffee crawls, konbini snack runs. Optional Kawaguchiko day trip for Fuji views.</div>
+                    <div class="highlights">
+                        <span class="highlight-tag coffee">Specialty coffee hub</span>
+                        <span class="highlight-tag kids">TeamLab Borderless</span>
+                        <span class="highlight-tag kids">Yoyogi / Inokashira parks</span>
+                        <span class="highlight-tag food">Conveyor belt sushi</span>
+                        <span class="highlight-tag tip">Fly into Haneda</span>
+                    </div>
+                </div>
+                <div class="stop-card" data-lat="34.6937" data-lng="135.5023" data-map="map3">
+                    <div class="stop-num">2</div>
+                    <h3>Osaka</h3>
+                    <div class="nights">4 nights</div>
+                    <div class="transport">Shinkansen — 2h 30min (ship luggage via takkyubin)</div>
+                    <div class="description">Street food capital. Nara deer park day trip (the kids will lose their minds). NIFREL aquarium, Utsubo Park, Nakazakicho cafes. Okonomiyaki you cook yourself, all-you-can-eat shabu shabu. Round1 for rainy day backup.</div>
+                    <div class="highlights">
+                        <span class="highlight-tag food">Street food capital</span>
+                        <span class="highlight-tag kids">Nara deer park</span>
+                        <span class="highlight-tag kids">NIFREL aquarium</span>
+                        <span class="highlight-tag coffee">Takamura, LiLo, Mel</span>
+                        <span class="highlight-tag food">Interactive dining</span>
+                        <span class="highlight-tag tip">Mimaru apartments</span>
+                    </div>
+                </div>
+                <div class="stop-card" data-lat="26.3344" data-lng="127.7671" data-map="map3">
+                    <div class="stop-num">3</div>
+                    <h3>Okinawa</h3>
+                    <div class="nights">5-6 nights</div>
+                    <div class="transport">Fly from Osaka KIX — 2h. Rental car on island.</div>
+                    <div class="description">A completely different Japan. Base in Chatan — Araha Beach for daily swims, local cafes, relaxed pace. Churaumi Aquarium (whale sharks!) + Emerald Beach. Naha's Makishi Market. Taco rice, Okinawa soba, blue seal ice cream. Yomitan pottery village.</div>
+                    <div class="highlights">
+                        <span class="highlight-tag beach">Warm beaches (27°C!)</span>
+                        <span class="highlight-tag kids">Churaumi Aquarium</span>
+                        <span class="highlight-tag food">Okinawan cuisine</span>
+                        <span class="highlight-tag coffee">Zhyvago Coffee</span>
+                        <span class="highlight-tag beach">Araha Beach</span>
+                        <span class="highlight-tag kids">Subtropical parks</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="daytrips">
+                <h3>Day Trips</h3>
+                <div class="daytrip-grid">
+                    <div class="daytrip-card">
+                        <strong>Nara</strong>
+                        <span class="from-badge">From Osaka · 45min train</span>
+                        <div class="desc">Deer park, Todai-ji temple. Peak toddler content. Flat, stroller-friendly. Bring deer crackers.</div>
+                    </div>
+                    <div class="daytrip-card">
+                        <strong>Mt Fuji / Kawaguchiko</strong>
+                        <span class="from-badge">From Tokyo · 2h bus</span>
+                        <div class="desc">Lake views, playgrounds, boat rides. Weather dependent (66% cloud chance). Worth a shot if forecast is clear.</div>
+                    </div>
+                    <div class="daytrip-card">
+                        <strong>Churaumi Aquarium + Emerald Beach</strong>
+                        <span class="from-badge">From Chatan · 1.5h drive north</span>
+                        <div class="desc">One of the world's best aquariums — whale shark tank is jaw-dropping. Emerald Beach next door is gorgeous. Full day trip, pack swimsuits.</div>
+                    </div>
+                    <div class="daytrip-card">
+                        <strong>Naha / Makishi Market</strong>
+                        <span class="from-badge">From Chatan · 30min drive</span>
+                        <div class="desc">Kokusai Street, Makishi Public Market (pick your seafood, they cook it upstairs). Tsuboya pottery district. Shuri Castle grounds.</div>
+                    </div>
+                    <div class="daytrip-card">
+                        <strong>Yomitan / Zanpa Cape</strong>
+                        <span class="from-badge">From Chatan · 20min drive</span>
+                        <div class="desc">Pottery village (Yachimun no Sato), lighthouse, tide pools. Local, quiet. Kids love the rocky coast.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cost-section">
+                <h3>Cost Estimate <span class="cost-badge budget">Budget</span> <span class="cost-badge mid">Mid-range</span></h3>
+                <table class="cost-table">
+                    <thead><tr><th>Category</th><th>Budget</th><th>Mid-range</th><th>Notes</th></tr></thead>
+                    <tbody>
+                        <tr><td>Flights PRG → HND return (4 pax)</td><td>60 000 Kc</td><td>90 000 Kc</td><td class="note">Option: open-jaw (in HND, out Naha) adds ~10-15k but saves return domestic.</td></tr>
+                        <tr><td>Domestic: Osaka → Naha</td><td>7 000 Kc</td><td>12 000 Kc</td><td class="note">Peach/Jetstar from KIX. 4 seats, ~2h.</td></tr>
+                        <tr><td>Domestic: Naha → Tokyo (if needed)</td><td>8 000 Kc</td><td>13 000 Kc</td><td class="note">Skip if open-jaw international ticket.</td></tr>
+                        <tr><td>Shinkansen Tokyo → Osaka (2 adults)</td><td>12 000 Kc</td><td>12 000 Kc</td><td class="note">Individual Nozomi tickets. JR Pass not worth it for single leg.</td></tr>
+                        <tr><td>Local transport + takkyubin</td><td>4 000 Kc</td><td>5 000 Kc</td><td class="note">IC cards, takkyubin luggage forwarding. Okinawa transit = rental car.</td></tr>
+                        <tr><td>Rental car Okinawa (~5-6 days)</td><td>8 000 Kc</td><td>12 000 Kc</td><td class="note">Compact + 2 child seats. IDP needed (~500 Kc, get before departure). Fuel ~1 500 Kc.</td></tr>
+                        <tr><td>Accommodation (14-15 nights)</td><td>72 000 Kc</td><td>115 000 Kc</td><td class="note">Mimaru in Tokyo/Osaka. Okinawa apartments with kitchen. Cheaper than mainland.</td></tr>
+                        <tr><td>Food (14-15 days, family of 4)</td><td>36 000 Kc</td><td>54 000 Kc</td><td class="note">Okinawa eating slightly cheaper. Reserve mainland dinners in advance.</td></tr>
+                        <tr><td>Activities & entry fees</td><td>6 000 Kc</td><td>10 000 Kc</td><td class="note">Churaumi Aquarium, TeamLab, NIFREL, Nara. Beaches free.</td></tr>
+                        <tr><td>Coffee</td><td>4 000 Kc</td><td>7 000 Kc</td><td class="note">Good scenes in all 3 bases.</td></tr>
+                        <tr><td>Insurance + misc</td><td>9 000 Kc</td><td>15 000 Kc</td><td class="note">Insurance, eSIM, souvenirs, sunscreen, beach toys, snorkeling bits.</td></tr>
+                        <tr class="total"><td>TOTAL</td><td>~226 000 Kc</td><td>~345 000 Kc</td><td class="note">~9 000 EUR / ~13 800 EUR</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- COMPARE -->
+        <div class="option-panel" id="option-compare">
+            <table class="compare-table">
+                <thead><tr><th></th><th>A: Inland Sea</th><th>B: Okinawa</th></tr></thead>
+                <tbody>
+                    <tr><td>Route</td><td>Tokyo → Osaka → Onomichi</td><td>Tokyo → Osaka → Okinawa</td></tr>
+                    <tr><td>Nights</td><td>14 (5 + 4 + 5)</td><td>14-15 (4 + 4 + 6)</td></tr>
+                    <tr><td>New places</td><td>Onomichi, Tomonoura, Miyajima</td><td>Okinawa (completely new)</td></tr>
+                    <tr><td>Weather</td><td>20-28°C, pleasant</td><td>20-30°C, hot in Okinawa</td></tr>
+                    <tr><td>Warm swimming</td><td>Borderline (24°C)</td><td>Yes — 27°C water</td></tr>
+                    <tr><td>Domestic flights</td><td>0</td><td>1-2 (Osaka→Naha, Naha→Tokyo)</td></tr>
+                    <tr><td>Rental car</td><td>No</td><td>Yes (Okinawa, 5-6 days)</td></tr>
+                    <tr><td>Tourist density</td><td>Very low (Onomichi) / Med (cities)</td><td>Low-Med (Chatan) / Med (cities)</td></tr>
+                    <tr><td>Specialty coffee</td><td>Excellent (Tokyo + Osaka)</td><td>Excellent (Tokyo + Osaka) / Good (Chatan)</td></tr>
+                    <tr><td>Food highlights</td><td>Osaka street food, Onomichi ramen, Miyajima oysters</td><td>Osaka street food, Okinawa soba, taco rice</td></tr>
+                    <tr><td>Best for kids</td><td>Nara deer, Miyajima deer, harbor cats, TeamLab</td><td>Beaches, Churaumi Aquarium, Nara deer, TeamLab</td></tr>
+                    <tr><td>Stroller-friendly</td><td>Very good (flat waterfronts)</td><td>Good (car-based in Okinawa)</td></tr>
+                    <tr><td>Trip ending vibe</td><td>Quiet small town wind-down</td><td>Beach relaxation</td></tr>
+                    <tr><td>JR Pass useful?</td><td>Yes — covers full route</td><td>No — single shinkansen leg</td></tr>
+                    <tr><td>Typhoon risk</td><td>Low</td><td>Moderate (Okinawa)</td></tr>
+                    <tr class="cost-row"><td>Budget estimate</td><td><strong>~210 000 Kc</strong><br><span style="color:#7a756d;font-size:12px">~8 400 EUR</span></td><td><strong>~226 000 Kc</strong><br><span style="color:#7a756d;font-size:12px">~9 000 EUR</span></td></tr>
+                    <tr class="cost-row"><td>Mid-range estimate</td><td><strong>~309 000 Kc</strong><br><span style="color:#7a756d;font-size:12px">~12 400 EUR</span></td><td><strong>~345 000 Kc</strong><br><span style="color:#7a756d;font-size:12px">~13 800 EUR</span></td></tr>
+                    <tr class="cost-row"><td>Price difference</td><td colspan="2" style="text-align:center;color:#7a756d;">Option B costs ~16 000 Kc (~640 EUR) more at budget, ~36 000 Kc (~1 400 EUR) more mid-range</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TIPS -->
+        <div class="option-panel" id="option-tips">
+            <div class="tips-grid">
+                <div class="tip-card">
+                    <h4><span class="tip-icon" style="background:#e8f0e8;">🧳</span> Luggage</h4>
+                    <ul>
+                        <li><strong>Takkyubin</strong> — ship bags between hotels for ~350 Kc/bag. Available at any konbini or hotel front desk. Travel light on shinkansen.</li>
+                        <li>Fly into <strong>Haneda</strong>, not Narita — significantly closer to central Tokyo with exhausted toddlers</li>
+                        <li>Always overnight in Tokyo before departure — never try to fly out same day from Osaka</li>
+                    </ul>
+                </div>
+                <div class="tip-card">
+                    <h4><span class="tip-icon" style="background:#fef3e0;">🏠</span> Accommodation</h4>
+                    <ul>
+                        <li><strong>Mimaru</strong> apartments — family-oriented chain with kitchenettes, coin laundry, floor space. Locations in Tokyo + Osaka.</li>
+                        <li><strong>&Here</strong> — another good apartment-hotel brand for families</li>
+                        <li>Ryokan: look for <strong>kashikiri-buro</strong> (private family bath). Most public onsen don't allow diapered children. 1-2 nights max.</li>
+                    </ul>
+                </div>
+                <div class="tip-card">
+                    <h4><span class="tip-icon" style="background:#fef3e0;">🍱</span> Food with Kids</h4>
+                    <ul>
+                        <li><strong>Conveyor belt sushi</strong> (Uobei, Kura Sushi) — kids pick visually, many non-fish options, no pressure</li>
+                        <li><strong>Interactive dining</strong> is the move: shabu shabu, okonomiyaki, teppanyaki — kids engaged, no waiting</li>
+                        <li>Use <strong>Tabelog</strong> (not Google Maps) to find family restaurants. Ask for "okosama" (children's) meals.</li>
+                        <li>Reserve at least half of dinners a few days in advance</li>
+                        <li><strong>Royal Host</strong> chain — omurice is the universal kid-approved fallback</li>
+                    </ul>
+                    <div class="tip-highlight">Must-try formats: tempura, sukiyaki/shabu-shabu, sushi, izakaya, okonomiyaki, teppanyaki</div>
+                </div>
+                <div class="tip-card">
+                    <h4><span class="tip-icon" style="background:#e8f0e8;">🎮</span> Activities</h4>
+                    <ul>
+                        <li><strong>TeamLab</strong> — interactive digital art installations. Multiple locations across Japan.</li>
+                        <li><strong>Fukagawa Edo Museum</strong> (Tokyo) — reconstructed indoor Edo village, hands-on, rarely on tourist lists</li>
+                        <li><strong>Round1</strong> — rainy day gold. Arcade, bowling, karaoke, sports under one roof. Nationwide.</li>
+                        <li>Leave time at least once daily for free play — playgrounds, parks, play centers</li>
+                        <li>Japanese zoos tend to disappoint vs Western standards — skip them</li>
+                    </ul>
+                </div>
+                <div class="tip-card">
+                    <h4><span class="tip-icon" style="background:#e0ecf4;">🗻</span> Mt Fuji</h4>
+                    <ul>
+                        <li>Don't plan a whole day around "seeing" Fuji — <strong>66% chance of cloud cover</strong></li>
+                        <li>Best family spots: <strong>Fujiyoshida</strong>, <strong>Lake Kawaguchiko</strong> (playgrounds, boat rides, Fuji backdrop)</li>
+                        <li>Doable as a day trip from Tokyo (~2h by bus)</li>
+                        <li>Go if the forecast is clear, have a backup plan if not</li>
+                    </ul>
+                </div>
+                <div class="tip-card">
+                    <h4><span class="tip-icon" style="background:#fff3f0;">👶</span> Baby/Toddler Supplies</h4>
+                    <ul>
+                        <li>Diapers: Google Maps → <strong>"Akachanhompo near me"</strong>, "Nishimatsuya near me", or "Toys R Us near me"</li>
+                        <li><strong>National Azabu</strong> (Hiroo, Tokyo) delivers Western groceries nationwide</li>
+                        <li>Hotel pools are rare and mostly only open Jul-Aug — don't count on pool time</li>
+                        <li>Most playgrounds have separate toddler sections with age-appropriate equipment</li>
+                    </ul>
+                </div>
+                <div class="tip-card">
+                    <h4><span class="tip-icon" style="background:#f0e8f0;">🚄</span> Transport</h4>
+                    <ul>
+                        <li>JR Pass: <strong>calculate before buying</strong> — post-2023 price hike makes it marginal for some routes</li>
+                        <li>Kids under 6 ride JR <strong>free</strong> (unreserved seats only)</li>
+                        <li>Hit restrooms at shrines/parks BEFORE walking crowded commercial streets</li>
+                        <li>Suica/Pasmo IC cards work on virtually all urban transit</li>
+                    </ul>
+                </div>
+                <div class="tip-card">
+                    <h4><span class="tip-icon" style="background:#e0f0f0;">🛍️</span> Souvenirs</h4>
+                    <ul>
+                        <li><strong>Sou Sou</strong> brand (Tokyo + Kyoto) — kids' yukata with built-in straps, jinbei pajamas. Practical souvenirs that actually get worn at home.</li>
+                        <li>Konbini snacks make great gifts — stock up at 7-Eleven, Lawson, FamilyMart</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div style="background:#fff;border-radius:12px;border:1px solid #e0ddd8;padding:20px;">
+                <h4 style="font-size:13px;color:#7a756d;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Reference Links</h4>
+                <ul style="list-style:none;font-size:13px;">
+                    <li style="padding:4px 0;"><a href="https://www.japan-guide.com/railpass/" style="color:#c45a3c;">japan-guide.com/railpass</a> — JR Pass calculator & guide</li>
+                    <li style="padding:4px 0;"><a href="https://www.bontraveler.com/japan-itinerary-with-kids/" style="color:#c45a3c;">bontraveler.com — Japan itinerary with kids</a></li>
+                    <li style="padding:4px 0;"><a href="https://www.bontraveler.com/japan-with-toddlers/" style="color:#c45a3c;">bontraveler.com — Japan with toddlers</a></li>
+                    <li style="padding:4px 0;"><a href="https://www.thetokyochapter.com/japan-with-kids-dont-make-these-mistakes/" style="color:#c45a3c;">thetokyochapter.com — Don't make these mistakes</a></li>
+                    <li style="padding:4px 0;"><a href="https://theeverymom.com/traveling-to-japan-with-kids/" style="color:#c45a3c;">theeverymom.com — Traveling to Japan with kids</a></li>
+                    <li style="padding:4px 0;"><a href="https://www.flyertalk.com/forum/japan/2141017-two-weeks-japan-5-year-old.html" style="color:#c45a3c;">FlyerTalk — Two weeks with a 5yo</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Previously visited -->
+        <div class="places-visited">
+            <h4>Previously Visited</h4>
+            <div class="tags">
+                <span class="tag-visited">Tokyo (revisiting)</span>
+                <span class="tag-visited">Osaka (revisiting)</span>
+                <span class="tag-visited">Kyoto</span>
+                <span class="tag-visited">Hiroshima</span>
+                <span class="tag-visited">Nara</span>
+                <span class="tag-visited">Nagoya</span>
+                <span class="tag-visited">Kanazawa</span>
+                <span class="tag-visited">Takayama (Japanese Alps)</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.option-panel').forEach(p => p.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById('option-' + tab.dataset.option).classList.add('active');
+                setTimeout(() => Object.values(maps).forEach(m => m.invalidateSize()), 100);
+            });
+        });
+
+        const maps = {};
+        function createMap(id, stops, routeColor) {
+            const map = L.map(id, { scrollWheelZoom: false, zoomControl: true });
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OSM &copy; CARTO', subdomains: 'abcd', maxZoom: 16
+            }).addTo(map);
+
+            const markerIcon = (num) => L.divIcon({
+                className: 'custom-marker',
+                html: `<div style="width:30px;height:30px;border-radius:50%;background:${routeColor};color:white;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;font-family:system-ui;box-shadow:0 2px 6px rgba(0,0,0,0.3);border:2px solid white;">${num}</div>`,
+                iconSize: [30, 30], iconAnchor: [15, 15],
+            });
+
+            const coords = [];
+            stops.forEach((stop, i) => {
+                L.marker([stop.lat, stop.lng], { icon: markerIcon(i + 1) })
+                    .addTo(map)
+                    .bindPopup(`<strong>${stop.name}</strong><br>${stop.nights}<br><em>${stop.note}</em>`);
+                coords.push([stop.lat, stop.lng]);
+            });
+            if (coords.length > 1) {
+                L.polyline(coords, { color: routeColor, weight: 2, opacity: 0.5, dashArray: '8, 8' }).addTo(map);
+            }
+            if (stops.dayTrips) {
+                stops.dayTrips.forEach(dt => {
+                    const dtIcon = L.divIcon({
+                        className: 'dt-marker',
+                        html: `<div style="width:22px;height:22px;border-radius:50%;background:white;color:${routeColor};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;font-family:system-ui;box-shadow:0 1px 4px rgba(0,0,0,0.2);border:2px solid ${routeColor};">D</div>`,
+                        iconSize: [22, 22], iconAnchor: [11, 11],
+                    });
+                    L.marker([dt.lat, dt.lng], { icon: dtIcon })
+                        .addTo(map)
+                        .bindPopup(`<strong>${dt.name}</strong><br><em>Day trip from ${dt.from}</em>`);
+                    const fromStop = stops.find(s => s.name === dt.from);
+                    if (fromStop) {
+                        L.polyline([[fromStop.lat, fromStop.lng], [dt.lat, dt.lng]], {
+                            color: routeColor, weight: 1.5, opacity: 0.3, dashArray: '4, 6'
+                        }).addTo(map);
+                    }
+                });
+            }
+            map.fitBounds(L.latLngBounds(coords).pad(0.3));
+            maps[id] = map;
+        }
+
+        const stops1 = [
+            { lat: 35.6762, lng: 139.6503, name: 'Tokyo', nights: '5 nights', note: 'Parks, coffee, TeamLab, neighborhoods' },
+            { lat: 34.6937, lng: 135.5023, name: 'Osaka', nights: '4-5 nights', note: 'Street food, Nara deer park, NIFREL' },
+            { lat: 34.4089, lng: 133.2050, name: 'Onomichi', nights: '4-5 nights', note: 'Inland Sea harbor town, ramen, cats' },
+        ];
+        stops1.dayTrips = [
+            { lat: 34.6851, lng: 135.8048, name: 'Nara', from: 'Osaka' },
+            { lat: 35.5134, lng: 138.7553, name: 'Mt Fuji / Kawaguchiko', from: 'Tokyo' },
+            { lat: 34.3853, lng: 133.1767, name: 'Tomonoura', from: 'Onomichi' },
+            { lat: 34.2964, lng: 132.3188, name: 'Miyajima', from: 'Onomichi' },
+        ];
+
+        const stops3 = [
+            { lat: 35.6762, lng: 139.6503, name: 'Tokyo', nights: '4-5 nights', note: 'Parks, coffee, TeamLab, neighborhoods' },
+            { lat: 34.6937, lng: 135.5023, name: 'Osaka', nights: '4 nights', note: 'Street food, Nara deer park, NIFREL' },
+            { lat: 26.3344, lng: 127.7671, name: 'Okinawa (Chatan)', nights: '5-6 nights', note: 'Beaches, aquarium, subtropical' },
+        ];
+        stops3.dayTrips = [
+            { lat: 34.6851, lng: 135.8048, name: 'Nara', from: 'Osaka' },
+            { lat: 35.5134, lng: 138.7553, name: 'Mt Fuji / Kawaguchiko', from: 'Tokyo' },
+            { lat: 26.6944, lng: 127.8778, name: 'Churaumi Aquarium', from: 'Okinawa (Chatan)' },
+            { lat: 26.2124, lng: 127.6792, name: 'Naha / Makishi Market', from: 'Okinawa (Chatan)' },
+            { lat: 26.3960, lng: 127.7170, name: 'Yomitan / Zanpa Cape', from: 'Okinawa (Chatan)' },
+        ];
+
+        createMap('map1', stops1, '#c45a3c');
+        createMap('map3', stops3, '#d4882a');
+
+        document.querySelectorAll('.stop-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                const mapId = card.dataset.map;
+                if (maps[mapId]) maps[mapId].setView([parseFloat(card.dataset.lat), parseFloat(card.dataset.lng)], 8, { animate: true, duration: 0.5 });
+                card.classList.add('active-stop');
+            });
+            card.addEventListener('mouseleave', () => {
+                card.classList.remove('active-stop');
+                const mapId = card.dataset.map;
+                const coords = [];
+                card.closest('.option-panel').querySelectorAll('.stop-card').forEach(c =>
+                    coords.push([parseFloat(c.dataset.lat), parseFloat(c.dataset.lng)]));
+                if (maps[mapId] && coords.length > 1)
+                    maps[mapId].fitBounds(L.latLngBounds(coords).pad(0.3), { animate: true, duration: 0.5 });
+            });
+        });
+    </script>
+</body>
+</html>
